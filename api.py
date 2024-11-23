@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS  # Importar CORS
 import psycopg2
-import os
 
 app = Flask(__name__)
 
@@ -11,11 +10,11 @@ CORS(app)  # Esto permite que cualquier origen pueda acceder a la API
 # Conexión a PostgreSQL
 def get_db_connection():
     return psycopg2.connect(
-        dbname=os.environ.get("DB_NAME"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
-        host=os.environ.get("DB_HOST"),
-        port=os.environ.get("DB_PORT", "5432")  # 5432 es el puerto por defecto
+        dbname="descuentos",
+        user="postgres",
+        password="Laura1995.",
+        host="localhost",
+        port="5432"
     )
 
 # Ruta para listar todos los descuentos

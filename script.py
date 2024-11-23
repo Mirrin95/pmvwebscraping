@@ -1,13 +1,14 @@
 import requests
 import psycopg2
+import os
 
-# Conexión a PostgreSQL
+# Conexión a PostgreSQL usando las variables de entorno de Render
 conn = psycopg2.connect(
-    dbname="descuentos",  # Nombre de tu base de datos
-    user="postgres",      # Tu usuario de PostgreSQL
-    password="Laura1995.",  # Tu contraseña de PostgreSQL
-    host="localhost",     # Servidor local
-    port="5432"           # Puerto por defecto de PostgreSQL
+    dbname=os.environ.get("DB_NAME"),        # Nombre de la base de datos desde las variables de entorno
+    user=os.environ.get("DB_USER"),          # Usuario de la base de datos desde las variables de entorno
+    password=os.environ.get("DB_PASSWORD"),  # Contraseña de la base de datos desde las variables de entorno
+    host=os.environ.get("DB_HOST"),          # Host de la base de datos (usualmente proporcionado por Render)
+    port=os.environ.get("DB_PORT", "5432")   # Puerto (por defecto 5432)
 )
 
 cur = conn.cursor()
@@ -42,4 +43,3 @@ else:
 # Cerrar la conexión
 cur.close()
 conn.close()
-
