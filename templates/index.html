@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Descuentos</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      li {
+        background-color: #f9f9f9;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      strong {
+        font-size: 1.1em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Lista de Descuentos</h1>
+    <ul id="descuentos"></ul>
+
+    <script>
+      // Función para mostrar los descuentos en la página
+      function mostrarDescuentos(descuentos) {
+        const lista = document.getElementById("descuentos");
+        lista.innerHTML = ""; // Limpiar la lista antes de agregar nuevos datos
+
+        // Verificar si se recibieron descuentos
+        if (descuentos && descuentos.length > 0) {
+          descuentos.forEach((descuento) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                        <strong>${descuento.titulo}</strong><br>
+                        Oferta: ${descuento.valor_oferta} | Precio Original: ${descuento.valor_original}
+                    `;
+            lista.appendChild(li);
+          });
+        } else {
+          // Si no hay descuentos, mostrar un mensaje
+          lista.innerHTML = "<li>No hay descuentos disponibles.</li>";
+        }
+      }
+
+      // Función para cargar los descuentos desde la API
+      fetch("http://localhost:5000/api/descuentos")
+        .then((response) => response.json())
+        .then((data) => {
+          mostrarDescuentos(data);
+        })
+        .catch((error) => {
+          console.error("Error al cargar los descuentos:", error);
+          const lista = document.getElementById("descuentos");
+          lista.innerHTML = "<li>Error al cargar los descuentos.</li>";
+        });
+    </script>
+  </body>
+</html>
