@@ -9,6 +9,11 @@ app = Flask(__name__)
 # Habilitar CORS para permitir solicitudes de otros orígenes
 CORS(app)  # Esto permite que cualquier origen pueda acceder a la API
 
+# Ruta para la raíz
+@app.route('/')
+def home():
+    return "¡API de descuentos en funcionamiento!"  # Respuesta simple para la raíz
+
 # Conexión a PostgreSQL utilizando la URL de conexión de Render
 def get_db_connection():
     db_url = os.environ.get("DATABASE_URL")  # Asegúrate de configurar DATABASE_URL en Render
@@ -49,4 +54,14 @@ def listar_descuentos():
 
     cur.close()  # Cerrar el cursor
     conn.close()  # Cerrar la conexión a la base de datos
-    return jsonify(resultado)  # Devolver los datos en fo
+    return jsonify(resultado)  # Devolver los datos en formato JSON
+
+# Ruta para buscar descuentos por título
+@app.route('/api/descuentos/buscar', methods=['GET'])
+def buscar_descuento():
+    titulo = request.args.get('titulo', '')  # Obtener el parámetro 'titulo' de la solicitud GET
+
+    conn = get_db_connection()  # Obtener la conexión a la base de datos
+    cur = conn.cursor()  # Crear un cursor para ejecutar consultas
+
+    # Usar LIKE para realizar búsquedas par
