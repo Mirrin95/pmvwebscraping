@@ -1,45 +1,65 @@
 import requests
 import psycopg2
 import os
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Conexión a PostgreSQL usando las variables de entorno de Render
-conn = psycopg2.connect(
-    dbname=os.environ.get("DB_NAME"),        # Nombre de la base de datos desde las variables de entorno
-    user=os.environ.get("DB_USER"),          # Usuario de la base de datos desde las variables de entorno
-    password=os.environ.get("DB_PASSWORD"),  # Contraseña de la base de datos desde las variables de entorno
-    host=os.environ.get("DB_HOST"),          # Host de la base de datos (usualmente proporcionado por Render)
-    port=os.environ.get("DB_PORT", "5432")   # Puerto (por defecto 5432)
-)
+try:
+    conn = psycopg2.connect(
+        dbname=os.environ.get("DB_NAME"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        host=os.environ.get("DB_HOST"),
+        port=os.environ.get("DB_PORT", "5432")
+    )
+    cur = conn.cursor()
+    logging.info("Conexión exitosa a la base de datos.")
+except Exception as e:
+    logging.error(f"Error al conectar a la base de datos: {e}")
+    exit()
 
-cur = conn.cursor()
-
-# URL del API de Cuponatic
+# URL del API
 api_url = "https://co-api.cuponatic-latam.com/api2/cdn/descuentos/menu/gastronomia?ciudad=Bogota&v=22&page=1&sucursales=true"
 
 # Consumir la API
-response = requests.get(api_url)
-if response.status_code == 200:
-    data = response.json()  # Convertir la respuesta a JSON
-    
-    # Iterar por cada descuento en el JSON
-    for descuento in data:
-        # Extraer los datos necesarios
-        titulo = descuento.get('titulo') or 'Sin título'  # Validar que no sea None o vacío
-        valor_oferta = descuento.get('valor_oferta') or 'Sin valor'  # Validar que no sea None o vacío
-        valor_original = descuento.get('valor_original') or 'Sin valor'  # Validar que no sea None o vacío
+try:
+    response = requests.get(api_url)
+    response.raise_for_status()  # Lanza una excepción si hay un error HTTP
+    data = response.json()
 
-        # Insertar datos en la tabla PostgreSQL
-        cur.execute("""
-            INSERT INTO descuentos (titulo, valor_oferta, valor_original)
-            VALUES (%s, %s, %s)
-        """, (titulo, valor_oferta, valor_original))
+    # Verificar que la respuesta es una lista
+    if isinstance(data, list):
+        for descuento in data:
+            # Extraer datos necesarios
+            titulo = descuento.get('titulo', 'Sin título')
+            valor_oferta = descuento.get('valor_oferta', 'Sin valor')
+            valor_original = descuento.get('valor_original', 'Sin valor')
 
-    # Confirmar los cambios en la base de datos
-    conn.commit()
-    print("Descuentos guardados en la base de datos.")
-else:
-    print(f"Error al consumir la API: {response.status_code}")
+            try:
+                # Insertar datos en la tabla
+                cur.execute("""
+                    INSERT INTO descuentos (titulo, valor_oferta, valor_original)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (titulo) DO NOTHING  -- Evita duplicados basados en el título
+                """, (titulo, valor_oferta, valor_original))
+            except Exception as e:
+                logging.error(f"Error al insertar datos: {e}")
+        
+        # Confirmar los cambios en la base de datos
+        conn.commit()
+        logging.info("Descuentos guardados en la base de datos.")
+    else:
+        logging.warning("La API no devolvió una lista de datos.")
+except requests.exceptions.RequestException as e:
+    logging.error(f"Error al consumir la API: {e}")
+except Exception as e:
+    logging.error(f"Error inesperado: {e}")
 
 # Cerrar la conexión
-cur.close()
-conn.close()
+finally:
+    cur.close()
+    conn.close()
+    logging.info("Conexión a la base de datos cerrada.")
