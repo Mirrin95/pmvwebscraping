@@ -2,18 +2,29 @@ import requests
 import psycopg2
 import os
 import logging
+from urllib.parse import urlparse
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Conexión a PostgreSQL usando las variables de entorno de Render
 try:
+    # Obtenemos la URL de conexión desde las variables de entorno
+    db_url = os.environ.get("DATABASE_URL")  # Asegúrate de configurar DATABASE_URL en Render
+    if not db_url:
+        logging.error("La variable de entorno DATABASE_URL no está configurada.")
+        exit()
+
+    # Parseamos la URL de conexión
+    result = urlparse(db_url)
+    
+    # Conectamos a la base de datos usando psycopg2
     conn = psycopg2.connect(
-        dbname=os.environ.get("DB_NAME"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
-        host=os.environ.get("DB_HOST"),
-        port=os.environ.get("DB_PORT", "5432")
+        dbname=result.path[1:],  # Eliminamos el primer carácter '/' de la URL
+        user=result.username,
+        password=result.password,
+        host=result.hostname,
+        port=result.port
     )
     cur = conn.cursor()
     logging.info("Conexión exitosa a la base de datos.")
